@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>隐私说明 · 无界思维</title>
+<link rel="icon" href="icons/icon-32.png">
+<style>
+  :root{--bg:#F7F8FB;--ink:#1E293B;--ink2:#475569;--line:#E6EAF2;--brand:#4F46E5}
+  @media (prefers-color-scheme:dark){:root{--bg:#0F1320;--ink:#E5E7EB;--ink2:#A3ACBD;--line:#232A3B;--brand:#A5B4FC}}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.75 ui-sans-serif,-apple-system,"PingFang SC","Segoe UI",Roboto,sans-serif}
+  main{max-width:680px;margin:0 auto;padding:48px 16px 64px}
+  h1{font-size:24px;margin:0 0 4px}
+  h2{font-size:16px;margin:28px 0 6px}
+  p,li{color:var(--ink2)}
+  .en{border-top:1px solid var(--line);margin-top:40px;padding-top:12px}
+  a{color:var(--brand)}
+  code{font-size:13px}
+</style>
+</head>
+<body>
+<main>
+  <h1>无界思维 · 隐私说明</h1>
+  <p>更新日期：2026 年 11 月</p>
+
+  <h2>无界思维会访问什么</h2>
+  <p>连接 Google Drive 时，无界思维只申请两项权限：</p>
+  <ul>
+    <li><code>drive.file</code>：只能读写<strong>你用无界思维打开或新建的文件</strong>，看不到你 Drive 里的其他文件。</li>
+    <li><code>drive.install</code>：把无界思维加进 Drive 的「打开方式」和「新建」菜单。</li>
+  </ul>
+
+  <h2>数据存在哪里</h2>
+  <ul>
+    <li>无界思维是一个纯前端网页，没有自己的服务器。工程内容直接在你的浏览器和 Google Drive 之间传输，开发者收不到、也不保存。</li>
+    <li>浏览器本地会缓存最近编辑的内容和一个约 1 小时有效的 Google 访问令牌，用于离线编辑和免重复登录；清除网站数据即可删除。</li>
+    <li>不使用分析、广告或任何第三方追踪。</li>
+  </ul>
+
+  <h2>如何撤销授权</h2>
+  <p>随时可以在 <a href="https://myaccount.google.com/connections" target="_blank" rel="noopener">Google 账号 → 第三方连接</a> 里移除无界思维。Drive 里的文件不会被删除。</p>
+
+  <h2>联系</h2>
+  <p>（在这里填写你的联系邮箱）</p>
+
+  <div class="en">
+    <h2>Privacy (English)</h2>
+    <p>InfiniMind is a client-side web app with no backend. It requests only the <code>drive.file</code> scope (access limited to files you open or create with InfiniMind) and <code>drive.install</code> (adds InfiniMind to Drive's "Open with" and "New" menus). Your content travels only between your browser and Google Drive; the developer never receives or stores it. The browser keeps a local cache of recent edits and a short-lived (about one hour) Google access token. No analytics, ads or third-party tracking. You can revoke access at any time in your Google Account under third-party connections.</p>
+  </div>
+</main>
+</body>
+</html>

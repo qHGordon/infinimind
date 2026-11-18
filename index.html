@@ -260,6 +260,36 @@ a.lnkcard:hover .lnk-go{color:var(--brand)}
 }
 .todo.editing{box-shadow:0 0 0 2px var(--brand),0 8px 20px rgba(79,70,229,.2)}
 
+/* ---------- 表格 ---------- */
+.tbl{
+  position:absolute;border-radius:13px;background:#fff;border:1px solid var(--line);
+  box-shadow:var(--shadow-sm);padding:12px 12px 10px;cursor:default;will-change:transform;
+}
+.tbl .tb-f{outline:none;word-break:break-word}
+.tbl.item-sel td.tb-cur{box-shadow:inset 0 0 0 1.5px var(--brand);background-color:rgba(79,70,229,.05)}
+.tbl .tb-f.editing-f{background:#fff}
+.tbl.editing{box-shadow:0 0 0 2px var(--brand),0 8px 20px rgba(79,70,229,.2)}
+.tbl .rz{z-index:3}
+.tbl:hover .rz,.tbl.item-sel .rz{opacity:.85}
+.tbl .tb-addr{
+  position:absolute;left:12px;bottom:-25px;padding:2px 8px;border-radius:6px;
+  font-size:12px;font-weight:600;color:#8A94A6;cursor:pointer;opacity:0;transition:opacity .12s;
+  background:rgba(255,255,255,.9);white-space:nowrap;
+}
+.tbl .tb-addc{
+  position:absolute;right:-28px;top:13px;width:20px;height:20px;border-radius:50%;padding:0;
+  border:1.5px solid var(--brand);background:#fff;color:var(--brand);font-size:14px;line-height:1;
+  display:grid;place-items:center;cursor:pointer;opacity:0;transition:opacity .12s;
+}
+.tbl:hover .tb-addr,.tbl.item-sel .tb-addr,.tbl:hover .tb-addc,.tbl.item-sel .tb-addc{opacity:1}
+.tbl .tb-addr:hover{color:var(--brand);background:var(--brand-soft,#EEF2FF)}
+.tbl .tb-addc:hover{background:var(--brand);color:#fff}
+.tbl .tb-cr{position:absolute;right:-5px;top:0;bottom:0;width:10px;cursor:col-resize;z-index:2}
+.tbl .tb-cr::after{content:"";position:absolute;left:4px;top:4px;bottom:4px;width:2px;border-radius:1px;background:var(--brand);opacity:0}
+.tbl .tb-cr:hover::after{opacity:1}
+.tblOpts{display:flex;gap:18px;margin-top:10px;font-size:12.5px;color:var(--ink2)}
+.tblOpts label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+
 /* ---------- 手写墨迹 ---------- */
 #gInk path,#gDraw path{pointer-events:none}
 #gInk path.hit{pointer-events:fill;cursor:default}
@@ -559,6 +589,23 @@ kbd{font-family:var(--mono);font-size:11px;background:#F1F5F9;border:1px solid v
   </div>
 </div>
 
+<div class="overlay" id="dlgTable">
+  <div class="dlg">
+    <h3>插入表格</h3>
+    <div class="sub">粘贴 <b>CSV（逗号分隔）</b>、<b>Excel / 表格软件里复制的内容</b>或 <b>Markdown 表格</b>，一键生成表格。第一行如果只有一句话，会当作表格标题。单元格里可以写 LaTeX，如 <b>$2^{16}$</b>。留空则插入 3 × 3 空白表格。</div>
+    <textarea id="tableText" spellcheck="false" placeholder="例：&#10;编址方式,给定条件（字长）,单个编址单元大小&#10;按字节编址,固定 1B=8 bit,1B（8 位）&#10;按字编址,字长 16 位,2B（16 位）"></textarea>
+    <div class="tblOpts">
+      <label><input type="checkbox" id="tblHdr" checked>第一行是表头</label>
+      <label><input type="checkbox" id="tblFc" checked>第一列加粗</label>
+    </div>
+    <div class="dlgBtns">
+      <button class="btn" id="tblCancel">取消</button>
+      <button class="btn" id="tblBlank">空白 3 × 3</button>
+      <button class="btn primary" id="tblGo">生成表格</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="dlgHelp">
   <div class="dlg">
     <h3>帮助 · 快捷键</h3>
@@ -728,6 +775,12 @@ function serialize(){
       o.ids=(it.ids||[]).slice();o.sub=it.sub?1:0;o.label=it.label||"";
       o.c=it.c||0;o.dash=it.dash?1:0;o.w=r1(it.w);o.h=r1(it.h);
     }
+    else if(it.t==="table"){
+      o.title=it.title||"";if(it.titleHtml)o.titleHtml=it.titleHtml;
+      o.w=r1(it.w);o.bg=it.bg||0;o.hr=it.hr?1:0;o.hc=it.hc?1:0;if(it.grid)o.grid=1;
+      if(it.cw)o.cw=it.cw.map(v=>Math.round(v*1e4)/1e4);
+      o.rows=(it.rows||[]).map(r=>r.map(c=>(c.h!=null&&c.h!==escapeToHtml(c.t))?{t:c.t,h:c.h}:c.t));
+    }
     else if(it.t==="pic"){o.aid=it.aid;o.w=r1(it.w);o.h=r1(it.h);}
     else if(it.t==="ink"){
       o.pts=it.pts.map(q=>[r1(q[0]),r1(q[1]),Math.round(q[2]*100)/100]);
@@ -789,6 +842,7 @@ function restore(snap){
       it.text=it.text||"";
       if(it.html!=null)it.html=sanitizeHTMLString(it.html);
     }
+    if(it.t==="table")normTable(it);
     if(it.t==="note"){it.w=it.w||300;it.h=it.h||40;it.bg=it.bg||0;}
     IT.set(it.id,it);
   }
@@ -1460,6 +1514,13 @@ function rebuildDOM(){
       el.appendChild(tx);
       const rz=document.createElement("div");rz.className="rz";el.appendChild(rz);
       el.style.width=it.w+"px";el.style.height=it.h+"px";
+    }else if(it.t==="table"){
+      el.className="tbl";
+      el.innerHTML=tableHTML(it);
+      const rz=document.createElement("div");rz.className="rz";el.appendChild(rz);
+      el.style.width=it.w+"px";
+      if(it.bg)el.style.background=NOTE_BGS[it.bg];
+      if(NOTE_BGS[it.bg||0]==="transparent"){el.style.borderColor="transparent";el.style.boxShadow="none";}
     }else if(it.t==="pic"){
       el.className="pic";
       const img=document.createElement("img");
@@ -1526,6 +1587,7 @@ function measure(){
     }
     if(it.t==="node"){it.w=el.offsetWidth;it.h=el.offsetHeight;}
     else if(it.t==="note"){it.h=el.offsetHeight;}
+    else if(it.t==="table"){it.h=el.offsetHeight;tableGeo(it,el);}
     else if(it.t==="todo"){
       it.h=el.offsetHeight;
       const map={};
@@ -2718,6 +2780,9 @@ function duplicateSel(){
     const it=IT.get(id);if(!it)continue;
     if(it.t==="note"){
       const c={...it,id:uid("t"),x:it.x+28,y:it.y+28};IT.set(c.id,c);news.push(c.id);
+    }else if(it.t==="table"){
+      const c=JSON.parse(JSON.stringify({...it,_geo:null}));
+      delete c._geo;c.id=uid("g");c.x=it.x+28;c.y=it.y+28;IT.set(c.id,c);news.push(c.id);
     }else if(it.t==="pic"){
       const c={...it,id:uid("p"),x:it.x+28,y:it.y+28};IT.set(c.id,c);news.push(c.id);
     }else if(it.t==="node"){
@@ -3071,6 +3136,7 @@ function finishLaneEdit(silent){
   if(!silent){pushHistory();render(true);}
 }
 function finishEdit(silent,revert){
+  if(S.editField&&S.editField.f==="tbl")return finishTableEdit(silent,revert);
   if(S.editField&&/^lane:/.test(S.editField.f))return finishLaneEdit(silent);
   if(S.editField)
     return S.editField.f==="ltitle"?finishLinkEdit(silent,revert):finishTodoEdit(silent,revert);
@@ -3129,6 +3195,7 @@ const ic={
   link:'<svg viewBox="0 0 24 24"><circle cx="5.5" cy="6.5" r="2.6"/><circle cx="18.5" cy="17.5" r="2.6"/><path d="M7.8 8.2c3.4 2 4.8 5.4 8.4 7.4"/></svg>',
   del:'<svg viewBox="0 0 24 24"><path d="M4.5 6.5h15M9.5 6V4.5h5V6M7 6.5l1 13h8l1-13M10.3 10v6M13.7 10v6"/></svg>',
   tag:'<svg viewBox="0 0 24 24"><path d="M4 12V5a1 1 0 0 1 1-1h7l8 8-8 8z"/><circle cx="8.5" cy="8.5" r="1.3"/></svg>',
+  table:'<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg>',
   fit:'<svg viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"/></svg>'
 };
 function ctxBtn(icon,title,fn){
@@ -3255,6 +3322,21 @@ function updateCtxbar(){
       ctxbar.appendChild(fmtBtn('<span style="font-size:11px">清除</span>',"取消全部勾选",()=>{
         it.rows.forEach(r=>r.k=false);dirtyMeasure.add(it.id);pushHistory();render(true);
       }));
+      NOTE_BGS.forEach((c,i)=>ctxbar.appendChild(ctxDot(c==="transparent"?"auto":c,c==="transparent"?"无底色":"背景色",()=>{it.bg=i;pushHistory();render(true);})));
+    }else if(it.t==="table"){
+      const cur=tblCurOf(it);
+      const tg=(on,t)=>`<span style="font-size:11px;${on?"color:var(--brand);font-weight:700":"opacity:.62"}">${t}</span>`;
+      ctxbar.appendChild(ctxBtn(ic.edit,"编辑当前单元格（双击单元格 / Enter）",()=>{const c=cur||{r:0,c:0};startTableEdit(it.id,c.r,c.c,true);}));
+      ctxbar.appendChild(fmtBtn('<span style="font-size:11px">标题</span>',"编辑表格标题",()=>startTableEdit(it.id,-1,0,true)));
+      ctxbar.appendChild(fmtBtn('<span style="font-size:11px">+行</span>',cur?"在当前格下方插入一行":"在末尾添加一行",()=>tableAddRow(it.id,cur?cur.r+1:it.rows.length,false)));
+      ctxbar.appendChild(fmtBtn('<span style="font-size:11px">−行</span>',cur?"删除当前格所在的行":"删除最后一行",()=>tableDelRow(it.id,cur?cur.r:it.rows.length-1)));
+      ctxbar.appendChild(fmtBtn('<span style="font-size:11px">+列</span>',cur?"在当前格右边插入一列":"在最右边添加一列",()=>tableAddCol(it.id,cur?cur.c+1:tblCols(it),false)));
+      ctxbar.appendChild(fmtBtn('<span style="font-size:11px">−列</span>',cur?"删除当前格所在的列":"删除最后一列",()=>tableDelCol(it.id,cur?cur.c:tblCols(it)-1)));
+      ctxbar.appendChild(fmtBtn(tg(it.hr,"表头"),"第一行作为表头（灰底）",()=>{it.hr=it.hr?0:1;dirtyMeasure.add(it.id);pushHistory();render(true);}));
+      ctxbar.appendChild(fmtBtn(tg(it.hc,"首列"),"第一列加粗",()=>{it.hc=it.hc?0:1;dirtyMeasure.add(it.id);pushHistory();render(true);}));
+      ctxbar.appendChild(fmtBtn(tg(it.grid,"竖线"),"显示列之间的竖线",()=>{it.grid=it.grid?0:1;dirtyMeasure.add(it.id);pushHistory();render(true);}));
+      ctxbar.appendChild(fmtBtn('<span style="font-size:11px">复制</span>',"复制整张表（可粘贴到 Excel / Word）",()=>copyTable(it)));
+      ctxbar.appendChild(ctxBtn(ic.link,"从此对象连线 (L)",()=>beginConnectFrom(it.id)));
       NOTE_BGS.forEach((c,i)=>ctxbar.appendChild(ctxDot(c==="transparent"?"auto":c,c==="transparent"?"无底色":"背景色",()=>{it.bg=i;pushHistory();render(true);})));
     }else if(it.t==="shape"){
       ctxbar.appendChild(ctxBtn(ic.edit,"编辑文字 (双击)",()=>startEdit(it.id,true)));
@@ -3554,6 +3636,45 @@ function onDown(e){
     }
     if(S.editing===it.id&&e.target.closest(".editing-f"))return;   // 编辑中：让光标操作
   }
+  // ---- 表格交互 ----
+  const tbHost=e.target.closest?e.target.closest(".tbl"):null;
+  if(tbHost){
+    const it=IT.get(tbHost.dataset.id);
+    if(it){
+      if(S.editing===it.id&&e.target.closest(".editing-f"))return;   // 编辑中：让光标操作
+      const ad=e.target.closest(".tb-addr,.tb-addc");
+      if(ad){
+        e.preventDefault();finishEdit();selectOnly(it.id);
+        if(ad.classList.contains("tb-addr"))tableAddRow(it.id,it.rows.length,true);
+        else tableAddCol(it.id,tblCols(it),true);
+        return;
+      }
+      const cr=e.target.closest(".tb-cr");
+      if(cr){
+        e.preventDefault();finishEdit();
+        const n=tblCols(it),g=it._geo;
+        if(!it.cw||it.cw.length!==n){
+          const ws=g&&g.ws&&g.ws.length===n?g.ws:null;
+          const s=ws?ws.reduce((a,b)=>a+b,0):n;
+          it.cw=ws?ws.map(v=>v/s):Array(n).fill(1/n);
+          dirtyMeasure.add(it.id);render(true);
+        }
+        if(!S.sel.has(it.id))selectOnly(it.id);
+        cap(e);
+        G={kind:"tbCol",id:it.id,i:+cr.dataset.c,sx:e.clientX,cw0:it.cw.slice(),tw:(g&&g.tw)||Math.max(100,it.w-26)};
+        return;
+      }
+      const cell=e.target.closest(".tb-f");
+      if(cell&&S.editing===it.id){                   // 编辑中点另一格 → 直接改那一格
+        e.preventDefault();
+        const r=+cell.dataset.r,c=+cell.dataset.c;
+        finishEdit();
+        setTimeout(()=>startTableEdit(it.id,r,c,false),0);
+        return;
+      }
+      if(cell&&+cell.dataset.r>=0){S.tblCur={id:it.id,r:+cell.dataset.r,c:+cell.dataset.c};markTblCur(it.id);}
+    }
+  }
   const rz=e.target.closest?e.target.closest(".rz,.rzc"):null;
   if(rz){
     const host=rz.parentElement,it=IT.get(host.dataset.id);
@@ -3757,10 +3878,22 @@ function onMove(e){
       layoutAll();positionAll();drawTree();drawFree();
       return;
     }
+    case "tbCol":{
+      const it=IT.get(G.id);if(!it||!it.cw)return;
+      const i=G.i,a=G.cw0[i],b=G.cw0[i+1];
+      if(b==null)return;
+      const mn=Math.min(40/G.tw,(a+b)/2);
+      const na=clamp(a+(e.clientX-G.sx)/z/G.tw,mn,a+b-mn);
+      it.cw[i]=na;it.cw[i+1]=a+b-na;
+      const el=EL.get(it.id),cols=el?el.querySelectorAll("col"):[];
+      if(cols.length===it.cw.length)cols.forEach((cl,k)=>{cl.style.width=(it.cw[k]*100).toFixed(3)+"%";});
+      dirtyMeasure.add(it.id);measure();drawFree();updateCtxbar();
+      return;
+    }
     case "rzNote":{
       const it=IT.get(G.id);if(!it)return;
-      const lo=it.t==="shape"?90:it.t==="lane"?320:150;
-      it.w=clamp(G.sw+(e.clientX-G.sx)/z,lo,it.t==="lane"?2400:760);
+      const lo=it.t==="shape"?90:it.t==="lane"?320:it.t==="table"?160:150;
+      it.w=clamp(G.sw+(e.clientX-G.sx)/z,lo,(it.t==="lane"||it.t==="table")?2400:760);
       const el=EL.get(G.id);if(el)el.style.width=it.w+"px";
       if(it.t==="shape"&&el){
         el.querySelector("svg.shp").outerHTML=shapeSVG(it);
@@ -3888,6 +4021,7 @@ function finishGesture(aborted,e){
       pushHistory();render(true);
       break;
     }
+    case "tbCol":
     case "rzNote":case "rzPic":case "rzLane":
       pushHistory();render(true);
       break;
@@ -3937,6 +4071,12 @@ stage.addEventListener("dblclick",e=>{
       if(S.editing===it.id&&pt.closest(".editing-f"))return;
       const f=pt.closest("[data-f]");
       if(f)startLaneEdit(it.id,f.dataset.f,+(f.dataset.i||0),true);
+      return;
+    }
+    if(it.t==="table"){
+      if(S.editing===it.id&&pt.closest(".editing-f"))return;
+      const f=pt.closest(".tb-f");
+      if(f)startTableEdit(it.id,+f.dataset.r,+f.dataset.c,true);
       return;
     }
     if(it.t==="todo"){
@@ -4050,6 +4190,7 @@ addEventListener("keydown",e=>{
     }
   }
   if(single&&(single.t==="note")&&e.key==="F2"){e.preventDefault();startEdit(single.id);return;}
+  if(single&&single.t==="table"&&(e.key==="Enter"||e.key==="F2")){e.preventDefault();const c=tblCurOf(single)||{r:0,c:0};startTableEdit(single.id,c.r,c.c,false);return;}
   const toolKeys={v:()=>setTool("select"),h:()=>setTool("hand"),m:()=>showInsertMenu(),
     t:()=>insertNote(),i:()=>$("#fileImg").click(),l:()=>setTool("connect"),
     p:()=>$("#bP").onclick(),e:()=>setTool(S.tool==="eraser"?"select":"eraser"),
@@ -4276,6 +4417,7 @@ function showInsertMenu(anchor){
     {label:"矩阵 / 方程组",hint:"bmatrix · cases",icon:ic.tag,fn:insertMatrix},
     {label:"外框（框住选中的）",hint:"B",icon:ic.box,fn:()=>addBoxFromCtx()},
     {label:"任务清单",hint:"可勾选",icon:ic.fold,fn:()=>insertTodo()},
+    {label:"表格",hint:"粘贴 CSV / Excel",icon:ic.table,fn:openTableDialog},
     "-",
     {label:"工作流：流程块",hint:"W",icon:ic.fit,fn:insertFlowStarter},
     {label:"工作流：泳道",hint:"角色 × 阶段",icon:ic.sib,fn:()=>insertLane()},
@@ -4325,6 +4467,539 @@ function insertBlankMap(){
   selectOnly(root.id);pushHistory();render(true);
   startEdit(root.id,true);
 }
+/* ============================================================
+   表格：CSV / Excel / Markdown / 网页表格 → 画布上的表格对象
+   数据：{t:"table", title, titleHtml, rows:[[{t,h}]], hr 表头行, hc 首列加粗, grid 竖线, cw 列宽比例, bg, w}
+   ============================================================ */
+const TBL_EMPTY=()=>({t:"",h:null});
+function normTable(it){
+  let rows=Array.isArray(it.rows)?it.rows:[];
+  rows=rows.filter(r=>Array.isArray(r)).map(r=>r.map(c=>{
+    if(c&&typeof c==="object")
+      return {t:String(c.t!=null?c.t:(c.text!=null?c.text:"")),h:c.h!=null&&c.h!==""?sanitizeHTMLString(String(c.h)):null};
+    return {t:c==null?"":String(c),h:null};
+  }));
+  if(!rows.length)rows=[[TBL_EMPTY()]];
+  const n=Math.max(1,...rows.map(r=>r.length));
+  for(const r of rows)while(r.length<n)r.push(TBL_EMPTY());
+  it.rows=rows;
+  it.title=String(it.title||"");
+  it.titleHtml=it.titleHtml?sanitizeHTMLString(it.titleHtml):"";
+  it.hr=(it.hr===0||it.hr===false)?0:1;
+  it.hc=it.hc?1:0;it.grid=it.grid?1:0;it.bg=+it.bg||0;
+  it.w=+it.w||360;it.h=+it.h||80;
+  if(Array.isArray(it.cw)&&it.cw.length===n&&it.cw.every(v=>+v>0)){
+    const s=it.cw.reduce((a,b)=>a+(+b),0);it.cw=it.cw.map(v=>(+v)/s);
+  }else delete it.cw;
+  return it;
+}
+const tblCols=it=>(it.rows&&it.rows[0]?it.rows[0].length:1);
+function tblVLen(s){                       // 估算显示宽度：中文/全角算 1，其余约 0.58
+  let m=0;
+  for(const line of String(s||"").split("\n")){
+    let L=0;
+    for(const ch of line)L+=/[⺀-￯]/.test(ch)?1:0.58;
+    if(L>m)m=L;
+  }
+  return m;
+}
+function tableAutoW(it){
+  const n=tblCols(it);let tot=0;
+  for(let c=0;c<n;c++){
+    let m=0;
+    for(const r of it.rows.slice(0,80)){const L=tblVLen(r[c]&&r[c].t);if(L>m)m=L;}
+    tot+=clamp(Math.min(m,24)*13.2+24,64,330);
+  }
+  return clamp(Math.round(tot+26),220,1800);
+}
+function makeTable(rows,opt){
+  opt=opt||{};
+  const src=(rows&&rows.length)?rows:[["列 1","列 2","列 3"],["","",""],["","",""]];
+  const it={id:uid("g"),t:"table",title:String(opt.title||""),titleHtml:"",
+    rows:src.map(r=>(Array.isArray(r)?r:[r]).map(c=>(c&&typeof c==="object")?c:String(c==null?"":c))),
+    hr:opt.hr===false||opt.hr===0?0:1,hc:opt.hc?1:0,grid:opt.grid?1:0,bg:+opt.bg||0,
+    x:+opt.x||0,y:+opt.y||0,w:0,h:100};
+  normTable(it);
+  it.w=opt.w?clamp(+opt.w,160,2400):tableAutoW(it);
+  return it;
+}
+function insertTable(rows,opt){
+  opt=opt||{};
+  finishEdit();
+  const it=makeTable(rows,opt);
+  const sp=emptySpot(it.w,Math.min(600,50+it.rows.length*36));
+  it.x=sp.x;it.y=sp.y;
+  IT.set(it.id,it);
+  selectOnly(it.id);
+  S.tblCur={id:it.id,r:it.hr&&it.rows.length>1?1:0,c:0};
+  pushHistory();render(true);
+  return it;
+}
+/* ---------- 解析：Markdown / TSV / CSV（含引号）---------- */
+function parseDSV(text,d){
+  const rows=[];let row=[],cur="",q=false;
+  const s=String(text);
+  for(let i=0;i<s.length;i++){
+    const ch=s[i];
+    if(q){
+      if(ch==='"'){if(s[i+1]==='"'){cur+='"';i++;}else q=false;}
+      else cur+=ch;
+      continue;
+    }
+    if(ch==='"'&&cur.trim()===""){q=true;cur="";continue;}
+    if(ch===d){row.push(cur);cur="";continue;}
+    if(ch==="\n"){row.push(cur);rows.push(row);row=[];cur="";continue;}
+    cur+=ch;
+  }
+  row.push(cur);rows.push(row);
+  return rows;
+}
+function splitMdRow(inner){
+  const out=[];let cur="";
+  for(let i=0;i<inner.length;i++){
+    const ch=inner[i];
+    if(ch==="\\"&&inner[i+1]==="|"){cur+="|";i++;continue;}
+    if(ch==="|"){out.push(cur);cur="";continue;}
+    cur+=ch;
+  }
+  out.push(cur);
+  return out;
+}
+const MD_SEP=/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+function isMarkdownTable(txt){
+  const L=String(txt||"").replace(/\r/g,"").split("\n").filter(l=>l.trim());
+  return L.filter(l=>/^\s*\|.*\|\s*$/.test(l)).length>=2&&L.some(l=>MD_SEP.test(l)&&l.includes("-"));
+}
+function isTSVGrid(txt){
+  const L=String(txt||"").replace(/\r/g,"").replace(/\n+$/,"").split("\n");
+  if(L.length<2)return false;
+  const k=L[0].split("\t").length;
+  if(k<2)return false;
+  return L.every(l=>l.split("\t").length===k)&&!L.every(l=>/^\t/.test(l));
+}
+function tableFinalize(rows,title){
+  rows=(rows||[]).map(r=>r.map(c=>String(c==null?"":c).replace(/ /g," ").trim()));
+  while(rows.length&&rows[rows.length-1].every(c=>!c))rows.pop();
+  while(rows.length&&rows[0].every(c=>!c))rows.shift();
+  if(!rows.length)return null;
+  let n=Math.max(...rows.map(r=>r.length));
+  while(n>1&&rows.every(r=>!(r[n-1]||"")))n--;      // 去掉尾部整列空白（行尾多余的逗号）
+  rows=rows.slice(0,500).map(r=>{const o=r.slice(0,Math.min(n,60));while(o.length<Math.min(n,60))o.push("");return o;});
+  return {rows,title:String(title||"").trim()};
+}
+function parseTableText(txt){
+  const lines=String(txt||"").replace(/^﻿/,"").replace(/\r\n?/g,"\n").split("\n");
+  while(lines.length&&!lines[lines.length-1].trim())lines.pop();
+  while(lines.length&&!lines[0].trim())lines.shift();
+  if(!lines.length)return null;
+  // Markdown 表格（前面可以有一行标题）
+  if(isMarkdownTable(lines.join("\n"))){
+    const md=lines.filter(l=>/^\s*\|/.test(l));
+    const pre=lines.filter(l=>l.trim()&&!/^\s*\|/.test(l));
+    const rows=[];
+    for(const l of md){
+      if(MD_SEP.test(l)&&l.includes("-"))continue;
+      const inner=l.trim().replace(/^\|/,"").replace(/\|$/,"");
+      rows.push(splitMdRow(inner).map(c=>c.trim().replace(/<br\s*\/?>/gi,"\n").replace(/\*\*(.+?)\*\*/g,"$1")));
+    }
+    return tableFinalize(rows,pre.length===1?pre[0].replace(/^#+\s*/,"").replace(/\*\*/g,""):"");
+  }
+  const body=lines.join("\n");
+  let rows=null;
+  for(const d of ["\t",",","，",";","；","|"]){       // 按引号规则真正切一遍，多数行能切开才算这种分隔符
+    if(!body.includes(d))continue;
+    const rs=parseDSV(body,d);
+    const multi=rs.filter(r=>r.length>1).length;
+    if(multi>=Math.max(1,Math.ceil((rs.length-1)*0.6))){rows=rs;break;}
+  }
+  if(!rows)rows=lines.map(l=>[l]);
+  let title="";
+  if(rows.length>2&&rows[0].length===1&&rows.slice(1).filter(r=>r.length>1).length>=rows.length-2){
+    title=rows[0][0];rows=rows.slice(1);           // 第一行单独一句话 → 当标题
+  }
+  return tableFinalize(rows,title);
+}
+/* 网页 / Excel / Google 表格 / Claude 回答里复制的 HTML 表格 */
+function tableFromHTML(html,cellsOnly){
+  const t=document.createElement("template");
+  t.innerHTML=String(html);
+  const all=[...t.content.querySelectorAll("table")];
+  const tops=all.filter(x=>!(x.parentElement&&x.parentElement.closest&&x.parentElement.closest("table")));
+  if(!tops.length)return null;
+  const tb=tops.reduce((a,b)=>(b.rows.length>a.rows.length?b:a),tops[0]);
+  let title="";
+  if(!cellsOnly){
+    const cap=tb.querySelector("caption");
+    const rest=t.content.cloneNode(true);
+    rest.querySelectorAll("table,style,script,title,meta,link").forEach(n=>n.remove());
+    const outside=(rest.textContent||"").replace(/ /g," ").replace(/\s+/g," ").trim();
+    if(outside.length>80)return null;                // 夹着大段正文：不当表格处理
+    title=cap?cap.textContent.trim():outside;
+  }
+  const rows=[];
+  for(const tr of tb.rows){
+    if(tr.closest("table")!==tb)continue;
+    const r=[];
+    for(const cell of tr.cells){
+      let txt="";
+      try{txt=texFromHTML(cell.innerHTML);}catch(_){txt=cell.textContent||"";}
+      r.push(txt);
+      const span=Math.min(20,(+cell.colSpan||1)-1);
+      for(let k=0;k<span;k++)r.push("");
+    }
+    rows.push(r);
+  }
+  const f=tableFinalize(rows,title);
+  if(f){
+    const first=tb.rows[0];
+    f.th=!!(first&&(first.closest("thead")||[...first.cells].every(c=>c.tagName==="TH")));
+  }
+  return f;
+}
+function tableFromClipboard(dt){
+  let html="";
+  try{html=dt.getData("text/html")||"";}catch(_){}
+  if(html&&/<table[\s>]/i.test(html)){
+    const r=tableFromHTML(html);
+    if(r&&(r.rows.length>1||r.rows[0].length>1))return r;
+  }
+  const p=(dt.getData("text/plain")||"").replace(/\r/g,"").replace(/^\n+|\n+$/g,"");
+  if(isMarkdownTable(p)||isTSVGrid(p)){
+    const r=parseTableText(p);
+    if(r&&(r.rows.length>1||r.rows[0].length>1))return r;
+  }
+  return null;
+}
+/* ---------- 渲染 ---------- */
+function tableHTML(it,forExport){
+  const rows=it.rows,n=tblCols(it);
+  const cur=!forExport&&S.tblCur&&S.tblCur.id===it.id?S.tblCur:null;
+  let h="";
+  if(it.title||(!forExport&&it._titleOpen))
+    h+=`<div class="tb-f tb-title" data-r="-1" data-c="0" style="font-size:15px;font-weight:700;color:#16233B;line-height:1.45;margin:1px 3px 9px;outline:none;word-break:break-word">${fieldHTML(it.titleHtml||null,it.title)}</div>`;
+  h+=`<table style="position:relative;width:100%;border-collapse:separate;border-spacing:0;table-layout:${it.cw?"fixed":"auto"};font-size:13px;line-height:1.55;color:#334155">`;
+  if(it.cw)h+="<colgroup>"+it.cw.map(f=>`<col style="width:${(f*100).toFixed(3)}%"/>`).join("")+"</colgroup>";
+  rows.forEach((row,r)=>{
+    const isH=it.hr&&r===0;
+    h+="<tr>";
+    row.forEach((cell,c)=>{
+      const isC=it.hc&&c===0&&!isH;
+      let st="padding:7px 11px;vertical-align:top;text-align:left;overflow-wrap:anywhere;word-break:break-word;";
+      if(!(r===0||(it.hr&&r===1)))st+="border-top:1px solid #EDF0F5;";
+      if(it.grid&&c>0)st+="border-left:1px solid #EDF0F5;";
+      if(isH){
+        st+="font-weight:600;color:#475569;background:#F3F6FB;";
+        if(c===0)st+="border-radius:8px 0 0 8px;";
+        if(c===n-1)st+=(n===1?"border-radius:8px;":"border-radius:0 8px 8px 0;");
+      }else if(isC)st+="font-weight:700;color:#16233B;";
+      if(r===0&&!forExport)st+="position:relative;";
+      const curCls=cur&&cur.r===r&&cur.c===c?' class="tb-cur"':"";
+      h+=`<td${curCls} style="${st}"><div class="tb-f" data-r="${r}" data-c="${c}" style="min-height:1.55em;outline:none">${fieldHTML(cell.h,cell.t)}</div>`+
+         (!forExport&&r===0&&c<n-1?`<span class="tb-cr" data-c="${c}" title="拖动调整列宽"></span>`:"")+
+         `</td>`;
+    });
+    h+="</tr>";
+  });
+  h+="</table>";
+  if(!forExport)
+    h+=`<div class="tb-addr" title="在末尾添加一行">＋ 添加一行</div><button class="tb-addc" title="在最右边添加一列">＋</button>`;
+  return forExport?h.replace(/<br>/g,"<br/>"):h;
+}
+function tableGeo(it,el){
+  const tb=el.querySelector("table");
+  if(!tb)return;
+  const g={tx:tb.offsetLeft,ty:tb.offsetTop,tw:tb.offsetWidth,th:tb.offsetHeight,xs:[],ws:[],ys:[],hs:[]};
+  for(const tr of tb.rows){const td=tr.cells[0];if(!td)continue;g.ys.push(td.offsetTop);g.hs.push(td.offsetHeight);}
+  if(tb.rows[0])for(const td of tb.rows[0].cells){g.xs.push(td.offsetLeft);g.ws.push(td.offsetWidth);}
+  const ti=el.querySelector(".tb-title");
+  if(ti)g.ti={x:ti.offsetLeft,y:ti.offsetTop,w:ti.offsetWidth};
+  it._geo=g;
+}
+function drawTableCanvas(c,it){
+  const g=it._geo,W=it.w;
+  const H=g?Math.max(40,g.ty+g.th+10):it.h;
+  const bg=NOTE_BGS[it.bg||0];
+  rr(c,it.x,it.y,W,H,13);
+  if(bg!=="transparent"){c.fillStyle=bg;c.fill();c.strokeStyle="#E6EAF2";c.lineWidth=1;c.stroke();}
+  if(!g)return;
+  c.textBaseline="middle";c.textAlign="left";
+  if(g.ti&&it.title){
+    c.font=`700 15px ${FONT_STACK}`;c.fillStyle="#16233B";
+    wrapLines(c,plainMath(it.title),g.ti.w).forEach((ln,i)=>c.fillText(ln,it.x+g.ti.x,it.y+g.ti.y+15*1.45*(i+.5)));
+  }
+  const X0=it.x+g.tx,Y0=it.y+g.ty,n=g.ws.length;
+  if(it.hr&&g.hs.length){rr(c,X0,Y0,g.tw,g.hs[0],8);c.fillStyle="#F3F6FB";c.fill();}
+  for(let r=0;r<g.ys.length;r++){
+    const y=Y0+g.ys[r],hh=g.hs[r];
+    c.strokeStyle="#EDF0F5";c.lineWidth=1;
+    if(!(r===0||(it.hr&&r===1))){c.beginPath();c.moveTo(X0,y+.5);c.lineTo(X0+g.tw,y+.5);c.stroke();}
+    for(let k=0;k<n;k++){
+      const x=X0+g.xs[k],w=g.ws[k];
+      if(it.grid&&k>0){c.beginPath();c.moveTo(x+.5,y);c.lineTo(x+.5,y+hh);c.stroke();}
+      const cell=(it.rows[r]||[])[k];
+      if(!cell||!cell.t)continue;
+      const isH=it.hr&&r===0,isC=it.hc&&k===0&&!isH;
+      c.font=`${isH?600:isC?700:400} 13px ${FONT_STACK}`;
+      c.fillStyle=isH?"#475569":isC?"#16233B":"#334155";
+      wrapLines(c,plainMath(cell.t),Math.max(10,w-22)).forEach((ln,i)=>c.fillText(ln,x+11,y+7+13*1.55*(i+.5)));
+    }
+  }
+}
+/* ---------- 行 / 列操作 ---------- */
+const tblCurOf=it=>(it&&S.tblCur&&S.tblCur.id===it.id&&it.rows[S.tblCur.r]&&S.tblCur.c<tblCols(it))?S.tblCur:null;
+function markTblCur(id){
+  const el=EL.get(id),cur=S.tblCur;
+  if(!el)return;
+  el.querySelectorAll("td.tb-cur").forEach(x=>x.classList.remove("tb-cur"));
+  if(!cur||cur.id!==id)return;
+  const f=el.querySelector(`.tb-f[data-r="${cur.r}"][data-c="${cur.c}"]`);
+  if(f&&f.parentElement)f.parentElement.classList.add("tb-cur");
+}
+function tableAddRow(id,at,edit){
+  const it=IT.get(id);if(!it)return;
+  const n=tblCols(it);
+  const c=(tblCurOf(it)||{c:0}).c;
+  at=clamp(at==null?it.rows.length:at,0,it.rows.length);
+  it.rows.splice(at,0,Array.from({length:n},TBL_EMPTY));
+  S.tblCur={id,r:at,c};
+  dirtyMeasure.add(id);pushHistory();render(true);
+  if(edit)setTimeout(()=>startTableEdit(id,at,c,true),0);
+}
+function tableDelRow(id,r){
+  const it=IT.get(id);if(!it)return;
+  if(it.rows.length<=1){toast("表格至少保留一行");return;}
+  r=clamp(r,0,it.rows.length-1);
+  const cc=(tblCurOf(it)||{c:0}).c;
+  it.rows.splice(r,1);
+  S.tblCur={id,r:Math.min(r,it.rows.length-1),c:cc};
+  dirtyMeasure.add(id);pushHistory();render(true);
+}
+function tableAddCol(id,at,edit){
+  const it=IT.get(id);if(!it)return;
+  const n=tblCols(it);
+  at=clamp(at==null?n:at,0,n);
+  const r=(tblCurOf(it)||{r:0}).r;
+  for(const row of it.rows)row.splice(at,0,TBL_EMPTY());
+  const grow=Math.round(it.w/Math.max(1,n)*0.8);
+  if(it.cw){it.cw.splice(at,0,1/n);const s=it.cw.reduce((a,b)=>a+b,0);it.cw=it.cw.map(v=>v/s);}
+  it.w=clamp(it.w+grow,160,2400);
+  S.tblCur={id,r,c:at};
+  dirtyMeasure.add(id);pushHistory();render(true);
+  if(edit)setTimeout(()=>startTableEdit(id,0,at,true),0);
+}
+function tableDelCol(id,c){
+  const it=IT.get(id);if(!it)return;
+  const n=tblCols(it);
+  if(n<=1){toast("表格至少保留一列");return;}
+  c=clamp(c,0,n-1);
+  const frac=it.cw?it.cw[c]:1/n,rr0=(tblCurOf(it)||{r:0}).r;
+  for(const row of it.rows)row.splice(c,1);
+  if(it.cw){it.cw.splice(c,1);const s=it.cw.reduce((a,b)=>a+b,0);it.cw=it.cw.map(v=>v/s);}
+  it.w=clamp(Math.round(it.w-(it.w-26)*frac),160,2400);
+  S.tblCur={id,r:rr0,c:Math.min(c,n-2)};
+  dirtyMeasure.add(id);pushHistory();render(true);
+}
+function tableFill(it,r0,c0,grid){         // 从 (r0,c0) 起贴一块数据，不够就自动扩行扩列
+  const gw=Math.max(...grid.map(r=>r.length));
+  const needC=c0+gw-tblCols(it);
+  for(let k=0;k<needC;k++){
+    for(const row of it.rows)row.push(TBL_EMPTY());
+    if(it.cw){it.cw.push(1/tblCols(it));const s=it.cw.reduce((a,b)=>a+b,0);it.cw=it.cw.map(v=>v/s);}
+  }
+  if(needC>0)it.w=clamp(it.w+needC*110,160,2400);
+  while(it.rows.length<r0+grid.length)it.rows.push(Array.from({length:tblCols(it)},TBL_EMPTY));
+  grid.forEach((row,i)=>row.forEach((v,j)=>{it.rows[r0+i][c0+j]={t:String(v==null?"":v).trim(),h:null};}));
+  dirtyMeasure.add(it.id);
+}
+function copyTable(it){
+  const tsv=it.rows.map(r=>r.map(c=>/[\t\n"]/.test(c.t)?'"'+c.t.replace(/"/g,'""')+'"':c.t).join("\t")).join("\n");
+  const html="<table>"+it.rows.map((r,i)=>"<tr>"+r.map(c=>{
+    const tg=it.hr&&i===0?"th":"td";
+    return "<"+tg+">"+escapeToHtml(c.t)+"</"+tg+">";
+  }).join("")+"</tr>").join("")+"</table>";
+  const ok=()=>toast("已复制表格 · 可粘贴到 Excel / Word / 另一张画布");
+  const plain=()=>{
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(tsv).then(ok,()=>toast("复制失败：浏览器不允许访问剪贴板"));
+    else toast("复制失败：浏览器不支持剪贴板");
+  };
+  try{
+    if(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){
+      navigator.clipboard.write([new ClipboardItem({
+        "text/plain":new Blob([tsv],{type:"text/plain"}),
+        "text/html":new Blob([html],{type:"text/html"})})]).then(ok,plain);
+      return;
+    }
+  }catch(_){}
+  plain();
+}
+/* ---------- 单元格编辑 ---------- */
+function tableCellNode(el,r,c){return el?el.querySelector(`.tb-f[data-r="${r}"][data-c="${c}"]`):null;}
+function startTableEdit(id,r,c,selectAll){
+  finishEdit();
+  const it=IT.get(id);
+  if(!it||it.t!=="table")return;
+  if(r<0){if(!it.title&&!it._titleOpen){it._titleOpen=true;render(true);}c=0;}
+  else{
+    r=clamp(r,0,it.rows.length-1);c=clamp(c,0,tblCols(it)-1);
+    S.tblCur={id,r,c};markTblCur(id);
+  }
+  const el=EL.get(id);
+  const node=tableCellNode(el,r,c);
+  if(!node)return;
+  S.editing=id;S.editField={f:"tbl",r,c};
+  let src;
+  if(r<0)src=it.titleHtml||escapeToHtml(it.title||"");
+  else{const cell=it.rows[r][c];src=cell.h!=null?cell.h:escapeToHtml(cell.t);}
+  editOrig={text:"",html:src};
+  node.innerHTML=src;                       // 编辑时显示 LaTeX 源码
+  node.contentEditable="true";
+  node.classList.add("editing-f");
+  el.classList.add("editing");
+  node.focus();
+  const rg=document.createRange();rg.selectNodeContents(node);
+  const sl=getSelection();sl.removeAllRanges();sl.addRange(rg);
+  if(!selectAll)sl.collapseToEnd();
+  node.addEventListener("keydown",tableKeydown);
+  node.addEventListener("blur",tableBlur);
+  node.addEventListener("paste",tablePaste);
+  node.addEventListener("input",todoInput);
+  dirtyMeasure.add(id);measure();positionAll();drawFree();
+  updateCtxbar();
+  if(r>=0&&!S.tblHinted){
+    S.tblHinted=true;
+    toast("Tab 下一格 · Enter 下一行（到底自动加行）· Shift+Enter 换行 · Esc 完成");
+  }
+}
+function tableBlur(){finishEdit();}
+function tableKeydown(e){
+  e.stopPropagation();
+  const id=S.editing,ef=S.editField;
+  if(!id||!ef)return;
+  const it=IT.get(id);if(!it)return;
+  if(MOD(e)){
+    const k=e.key.toLowerCase();
+    if(k==="b"){e.preventDefault();fmtCmd("bold");return;}
+    if(k==="i"){e.preventDefault();fmtCmd("italic");return;}
+    if(k==="u"){e.preventDefault();fmtCmd("underline");return;}
+    if(k==="s"){e.preventDefault();finishEdit();saveFile();return;}
+    return;
+  }
+  if(e.isComposing||e.keyCode===229)return;          // 中文输入法选词中
+  if(e.key==="Escape"){e.preventDefault();finishEdit();return;}
+  if(e.key==="Enter"&&e.shiftKey){e.preventDefault();document.execCommand("insertLineBreak");todoInput();return;}
+  if(ef.r<0){
+    if(e.key==="Enter"||e.key==="Tab"){
+      e.preventDefault();finishEdit();
+      if(e.key==="Tab")startTableEdit(id,0,0,true);
+    }
+    return;
+  }
+  if(e.key!=="Enter"&&e.key!=="Tab")return;
+  e.preventDefault();
+  const nr=it.rows.length,nc=tblCols(it);
+  let r=ef.r,c=ef.c;
+  if(e.key==="Enter")r++;
+  else if(e.shiftKey){c--;if(c<0){r--;c=nc-1;}if(r<0){finishEdit();startTableEdit(id,-1,0,true);return;}}
+  else{c++;if(c>=nc){c=0;r++;}}
+  finishEdit();
+  if(r>=nr){tableAddRow(id,nr,false);}
+  startTableEdit(id,r,c,true);
+}
+function tablePaste(e){
+  const ef=S.editField,dt=e.clipboardData||window.clipboardData;
+  if(ef&&ef.r>=0&&dt){
+    let grid=null,html="";
+    try{html=dt.getData("text/html")||"";}catch(_){}
+    if(html&&/<table[\s>]/i.test(html)){const r=tableFromHTML(html,true);if(r)grid=r.rows;}
+    if(!grid){
+      const p=(dt.getData("text/plain")||"").replace(/\r/g,"").replace(/\n+$/,"");
+      if(isMarkdownTable(p)){const r=parseTableText(p);grid=r&&r.rows;}
+      else if(p.includes("\t"))grid=parseDSV(p,"\t");
+    }
+    if(grid&&grid.length&&(grid.length>1||grid[0].length>1)){
+      e.preventDefault();e.stopPropagation();          // 别让画布的全局粘贴再建一张表
+      const id=S.editing,r0=ef.r,c0=ef.c;
+      finishEdit(true);
+      const it=IT.get(id);if(!it)return;
+      tableFill(it,r0,c0,grid);
+      pushHistory();render(true);
+      toast(`已粘贴 ${grid.length} 行 × ${Math.max(...grid.map(r=>r.length))} 列`);
+      return;
+    }
+  }
+  editPaste(e);
+}
+function finishTableEdit(silent,revert){
+  const id=S.editing,ef=S.editField;
+  S.editing=null;S.editField=null;
+  const it=IT.get(id),el=EL.get(id);
+  if(!it||!el)return;
+  const node=tableCellNode(el,ef.r,ef.c);
+  if(!node){delete it._titleOpen;return;}
+  if(revert)node.innerHTML=editOrig.html;
+  node.removeEventListener("keydown",tableKeydown);
+  node.removeEventListener("blur",tableBlur);
+  node.removeEventListener("paste",tablePaste);
+  node.removeEventListener("input",todoInput);
+  node.contentEditable="false";
+  node.classList.remove("editing-f");
+  el.classList.remove("editing");
+  const html=cleanChildren(node).replace(/(<br>)+$/,"");
+  const text=node.innerText.replace(/ /g," ").replace(/\n+$/,"");
+  const h=(html===escapeToHtml(text))?null:html;
+  if(ef.r<0){
+    it.title=text.trim();
+    it.titleHtml=it.title&&h?h:"";
+    delete it._titleOpen;
+  }else{
+    const cell=it.rows[ef.r]&&it.rows[ef.r][ef.c];
+    if(cell){cell.t=text;cell.h=text.trim()?h:null;if(!text.trim())cell.t="";}
+  }
+  dirtyMeasure.add(id);
+  if(!silent){pushHistory();render(true);}
+}
+/* ---------- 插入表格对话框 ---------- */
+function openTableDialog(){
+  $("#dlgTable").classList.add("show");
+  const ta=$("#tableText");
+  setTimeout(()=>{ta.focus();ta.select();},50);
+}
+function tableDialogGo(blank){
+  const ta=$("#tableText");
+  const hr=$("#tblHdr").checked,hc=$("#tblFc").checked;
+  const txt=blank?"":ta.value;
+  if(!txt.trim()){
+    $("#dlgTable").classList.remove("show");
+    const it=insertTable(null,{hr:true});
+    setTimeout(()=>startTableEdit(it.id,0,0,true),0);
+    return;
+  }
+  const r=parseTableText(txt);
+  if(!r){toast("没有识别出表格内容");return;}
+  $("#dlgTable").classList.remove("show");
+  insertTable(r.rows,{title:r.title,hr,hc});
+  ta.value="";
+  toast(`已生成表格：${r.rows.length} 行 × ${r.rows[0].length} 列 · 双击单元格编辑 · 选中后工具栏可加减行列`);
+}
+$("#tblCancel").onclick=()=>$("#dlgTable").classList.remove("show");
+$("#tblBlank").onclick=()=>tableDialogGo(true);
+$("#tblGo").onclick=()=>tableDialogGo(false);
+$("#tableText").addEventListener("keydown",e=>{
+  if(e.key==="Escape"){e.preventDefault();$("#dlgTable").classList.remove("show");}
+  else if(e.key==="Enter"&&MOD(e)){e.preventDefault();tableDialogGo(false);}
+});
+$("#tableText").addEventListener("paste",e=>{        // 贴进来的是网页/Excel 表格 → 转成制表符文本（公式保留为 LaTeX）
+  const dt=e.clipboardData;if(!dt)return;
+  let html="";try{html=dt.getData("text/html")||"";}catch(_){}
+  if(!html||!/<table[\s>]/i.test(html))return;
+  const r=tableFromHTML(html,true);
+  if(!r)return;
+  e.preventDefault();
+  const q=v=>/[\t\n"]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;
+  const tsv=r.rows.map(row=>row.map(q).join("\t")).join("\n");
+  document.execCommand("insertText",false,tsv);
+});
+
 function insertTodo(rows,title,sub){
   const w=460;
   const sp=emptySpot(w,180);
@@ -4557,6 +5232,13 @@ addEventListener("paste",e=>{
       return;
     }
   }
+  const tbl=tableFromClipboard(e.clipboardData);
+  if(tbl){
+    e.preventDefault();
+    insertTable(tbl.rows,{title:tbl.title});
+    toast(`已生成表格：${tbl.rows.length} 行 × ${tbl.rows[0].length} 列 · 双击单元格编辑`);
+    return;
+  }
   const txt=clipboardText(e.clipboardData);
   if(txt&&/(^|\n)\s*(?:[-*+]|\d+[.)])\s*\[[ xX✓√]\]/.test(txt)){
     const cl=parseChecklist(txt);
@@ -4734,6 +5416,7 @@ $("#impGo").onclick=()=>{
 function closeDialogs(){
   $("#dlgImport").classList.remove("show");
   $("#dlgHelp").classList.remove("show");
+  $("#dlgTable").classList.remove("show");
 }
 document.querySelectorAll(".overlay").forEach(ov=>{
   ov.addEventListener("pointerdown",e=>{if(e.target===ov)ov.classList.remove("show");});
@@ -4829,7 +5512,7 @@ function drawMinimap(){
     const x=ox+(it.x-bx)*sc,y=oy+(it.y-by)*sc;
     const w=Math.max(2,it.w*sc),h=Math.max(1.6,it.h*sc);
     c.fillStyle=it.t==="node"?(depthOf(it)===0?INK:hexA(branchColor(it),.85))
-      :it.t==="note"?"#C7CEDB":it.t==="todo"?"#B9C2D4"
+      :it.t==="note"?"#C7CEDB":(it.t==="todo"||it.t==="table")?"#B9C2D4"
       :it.t==="box"?hexA(boxColor(it).bd,.45):it.t==="shape"?hexA(shapeColor(it).bd,.8):it.t==="lane"?"#E3E8F2"
       :it.t==="ink"?hexA(it.color,.75):"#A5AEBF";
     c.beginPath();
@@ -4943,6 +5626,13 @@ function buildExportSVG(){
     if(it.t==="pic"){
       s+=`<image href="${S.assets.get(it.aid)||""}" x="${r1(it.x+3)}" y="${r1(it.y+3)}" width="${r1(it.w-6)}" height="${r1(it.h-6)}" preserveAspectRatio="none"/>`;
       s+=`<rect x="${r1(it.x)}" y="${r1(it.y)}" width="${r1(it.w)}" height="${r1(it.h)}" rx="10" fill="none" stroke="#E6EAF2"/>`;
+      continue;
+    }
+    if(it.t==="table"){
+      const bg=NOTE_BGS[it.bg||0];
+      s+=`<foreignObject x="${r1(it.x)}" y="${r1(it.y)}" width="${Math.ceil(it.w)+2}" height="${Math.ceil(it.h)+4}">`+
+         `<div xmlns="http://www.w3.org/1999/xhtml" style="box-sizing:border-box;width:${Math.ceil(it.w)}px;background:${bg==="transparent"?"none":bg};border:1px solid ${bg==="transparent"?"transparent":"#E6EAF2"};border-radius:13px;padding:12px 12px 10px;font-family:${FONT};">${tableHTML(it,true)}</div>`+
+         `</foreignObject>`;
       continue;
     }
     if(it.t==="todo"){
@@ -5301,6 +5991,7 @@ async function drawSceneToCanvas(scale){
     }
     if(it.t==="lane")continue;
     if(it.t==="shape"){drawShapeCanvas(c,it);continue;}
+    if(it.t==="table"){drawTableCanvas(c,it);continue;}
     if(it.t==="todo"){drawTodoCanvas(c,it);continue;}
     if(it.t==="note"){
       const fs=it.fs||14.5;
@@ -5972,7 +6663,7 @@ const projSheets=p=>{
         folder:fn.get(sh.fid)||sh.folder||null,items:sh.items||[],edges:sh.edges||[]}))
     : [{name:"画布",camera:p.camera||null,items:p.items||[],edges:p.edges||[]}];   // 兼容 v1 单画布
 };
-const PRE={node:"n",note:"t",pic:"p",todo:"d",ink:"k",box:"b",lane:"w",shape:"s"};
+const PRE={node:"n",note:"t",pic:"p",todo:"d",ink:"k",box:"b",lane:"w",shape:"s",table:"g"};
 /* 导入时给所有 id 换新，避免和当前工程里的 id 撞车 */
 function remapImported(sheets,assets){
   const idMap=new Map(),aidMap=new Map(),ridMap=new Map();
@@ -6249,6 +6940,30 @@ function buildFromSimple(p){
         }
         rows.forEach(r=>{if(r.t&&!textIndex.has(r.t))textIndex.set(r.t,{itemId:it.id,rid:r.id});});
         if(!hasXY)cursorY+=Math.max(200,rows.length*54+140);
+      }else if(type==="table"||type==="grid"||type==="sheet"||type==="表格"){
+        let rows=null,title=String(o.title!=null?o.title:o.name||"");
+        const srcRows=o.rows||o.data||o.cells;
+        if(Array.isArray(srcRows)&&srcRows.length){
+          if(srcRows.every(r=>r&&typeof r==="object"&&!Array.isArray(r))){      // [{列名:值}] → 表头 + 数据
+            const keys=[];for(const r of srcRows)for(const kk of Object.keys(r))if(!keys.includes(kk))keys.push(kk);
+            rows=[keys,...srcRows.map(r=>keys.map(kk=>r[kk]==null?"":String(r[kk])))];
+          }else rows=srcRows.map(r=>Array.isArray(r)?r.map(c=>c==null?"":String(c))
+            :(typeof r==="string"?(parseDSV(r,r.includes("\t")?"\t":",")[0]):[String(r)]));
+        }else{
+          const txt=o.csv||o.tsv||o.markdown||o.md||o.text||(typeof srcRows==="string"?srcRows:"");
+          const pr=parseTableText(String(txt||""));
+          if(pr){rows=pr.rows;if(!title&&pr.title)title=pr.title;}
+        }
+        const cols=o.columns||o.header||o.headers;
+        if(rows&&Array.isArray(cols))rows.unshift(cols.map(c=>String(c==null?"":c)));
+        if(!rows||!rows.length){warn.push(`第 ${k+1} 个 table 没有内容`);continue;}
+        const bg=typeof o.color==="string"?(NOTE_COLOR_NAMES[o.color.toLowerCase()]??0):(+o.bg||0);
+        const it=makeTable(rows,{title,hr:!(o.header===false||o.headerRow===false),
+          hc:!!(o.firstCol||o.firstColumn||o.rowHeader),grid:!!(o.grid||o.lines),bg,w:o.w,x:px,y:py});
+        items.push(it);
+        if(key)anchor.set(key,{itemId:it.id,rid:null});
+        if(title&&!textIndex.has(title))textIndex.set(title,{itemId:it.id,rid:null});
+        if(!hasXY)cursorY+=Math.max(160,it.rows.length*40+(title?110:80));
       }else if(type==="link"||type==="url"||type==="bookmark"){
         const url=String(o.url||o.href||o.src||o.text||"").trim();
         if(!safeHref(url)){warn.push(`第 ${k+1} 个 link 的网址无效（需 http/https）`);continue;}
@@ -6540,6 +7255,9 @@ const HELP=[
   ["清单：行右侧圆点","每一项都能单独拉线连到其他对象"],["<kbd>L</kbd> 点清单某一项","把该项作为连线端点"],
   ["粘贴 <kbd>- [ ] 任务</kbd>","Markdown 清单自动变成任务清单"],
   ["<kbd>B</kbd>","给选中的对象加外框（可框住整条分支）"],
+  ["插入表格","插入菜单 → 表格：粘贴 CSV / Excel / Markdown；或直接把表格粘贴到画布上"],
+  ["表格：双击单元格","编辑 · Tab 下一格 · Enter 下一行（到底自动加行）· 拖表头的列线调列宽"],
+  ["表格：选中后","工具栏加减行列（以当前格为准）· 表头 / 首列加粗 / 竖线 · 复制到 Excel"],
   ["左右双向展开","选中根主题 → 工具栏切 向右展开 / 左右平衡 / 向左展开"],
   ["单独翻一条分支","选中一级分支（或它的子主题）点 ⇄；也可以把分支拖到根主题另一侧"],
   ["外框","拖边框整组移动 · 双击左上角标签改名 · 工具栏换色/实虚线/连线"],
@@ -6719,6 +7437,7 @@ setTool("select");
 /* 供测试/高级用户使用 */
 window.__pushH=pushHistory;
 window.__IM={S,IT,ED,AS,SH,buildProject,pushHistory,sideOf,branchTop,flipBranch,cycleLayout,layoutTree,branchPath,kidsOf,rootOf,reparent,insertBox,boxFromSelection,insertSummary,boxMembers,layoutBoxes,addBoxFromCtx,startBoxLabel,visibleAnchor,isFolded,revealNode,beginGotoFrom,gotoTarget,edgeVisible,mkNode,matHTML,geomOf,loopGeom,isBackEdge,insertShape,insertFlowStarter,insertLane,shapePath,laneContains,orthoGeom,startLaneEdit,startLinkEdit,linkParts,linkify,soleURL,noteIsLink,safeHref,linkCardHTML,buildFromSimple,isSimpleFormat,openProjectFile,appendProject,mergeProject,projSheets,remapImported,projectIsEmpty,anchorRect,endpointAt,makeEdge,insertTodo,parseChecklist,addTodoRow,startTodoEdit,todoHTML,texFromHTML,deGlyph,tidyPasted,inkPath,inkBBox,inkHit,curInk,renderPenbar,mathify,plainMath,texParse,texHTML,texText,displayHTML,mathify,parseTreeText,importTreeText,render,setTool,enterLens,exitLens,pinLens,fitView,buildExportSVG,drawScene:drawSceneToCanvas,serialize,serializeProject,insertNote,insertBlankMap,addChild,undo,redo,autosaveNow:doAutosave,FS,DRV,fsSave,fsBind,fsExtract,fsSig,drvOpen,drvPick,drvCreate,drvConnect,startEdit,finishEdit,fmtCmd,newCanvas,addSheet,switchSheet,deleteSheet,addFolder,switchFolder,deleteFolder,moveSheetToFolder,sheetIdx,renderSheetbar,ensureFolders};
+Object.assign(window.__IM,{insertTable,makeTable,parseTableText,tableFromHTML,tableFromClipboard,startTableEdit,tableAddRow,tableAddCol,tableDelRow,tableDelCol,buildExportSVG,render});
 
 </script>
 </body>

@@ -2274,7 +2274,7 @@ function texHTML(nodes,disp){
       case "sp":h+=`<span style="display:inline-block;width:${n.v}"></span>`;break;
       case "sup":h+=`<sup style="font-size:71%;line-height:1">${texHTML(n.ch)}</sup>`;break;
       case "sub":h+=`<sub style="font-size:71%;line-height:1">${texHTML(n.ch)}</sub>`;break;
-      case "frac":h+=`<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:-0.62em;margin:0 .18em;line-height:1.25"><span style="font-size:88%;padding:0 .3em">${texHTML(n.a,disp)}</span><span style="font-size:88%;padding:0 .3em;border-top:1.1px solid currentColor">${texHTML(n.b,disp)}</span></span>`;break;
+      case "frac":h+=`<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .18em;line-height:1.25"><span style="font-size:88%;padding:0 .3em">${texHTML(n.a,disp)}</span><span style="font-size:88%;padding:0 .3em;border-top:1.1px solid currentColor">${texHTML(n.b,disp)}</span></span>`;break;
       case "sqrt":h+=`<span style="display:inline-flex;align-items:stretch;white-space:nowrap"><span style="display:flex;align-items:center;font-size:1.05em">√</span><span style="border-top:1.1px solid currentColor;padding:.08em .18em 0 .12em">${texHTML(n.ch,disp)}</span></span>`;break;
       case "over":h+=`<span style="border-top:1.1px solid currentColor;padding:0 .1em">${texHTML(n.ch,disp)}</span>`;break;
       case "under":h+=`<span style="border-bottom:1.1px solid currentColor;padding:0 .1em">${texHTML(n.ch,disp)}</span>`;break;

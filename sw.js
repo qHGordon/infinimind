@@ -1,5 +1,5 @@
 // 无界思维 · 离线缓存：网络优先，断网时用上次缓存的页面（只缓存本站文件，不碰 Google 接口）
-const CACHE = "infinimind-v4";
+const CACHE = "infinimind-v5";
 const CORE = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png"];
 self.addEventListener("install", e => {
   self.skipWaiting();

@@ -2011,12 +2011,62 @@ const TEXSYM={
   ldots:"…",cdots:"⋯",dots:"…",vdots:"⋮",ddots:"⋱",dotsb:"⋯",dotsc:"…",dotsm:"⋯",iddots:"⋰",prime:"′",hbar:"ℏ",ell:"ℓ",Re:"ℜ",Im:"ℑ",aleph:"ℵ",dagger:"†",
   mid:" ∣ ",vert:"|",Vert:"‖",langle:"⟨",rangle:"⟩",lfloor:"⌊",rfloor:"⌋",lceil:"⌈",rceil:"⌉",
   colon:":",because:"∵",therefore:"∴",top:"⊤",bot:"⊥",models:"⊨",vdash:"⊢",
+  /* —— 补充：圈运算 / 关系 / 箭头 / 杂项 —— */
+  odot:"⊙",ominus:"⊖",oslash:"⊘",circledast:"⊛",circledcirc:"⊚",boxplus:"⊞",boxtimes:"⊠",
+  bigodot:"⨀",bigoplus:"⨁",bigotimes:"⨂",bigvee:"⋁",bigwedge:"⋀",bigsqcup:"⨆",biguplus:"⨄",
+  iint:"∬",iiint:"∭",oiint:"∯",
+  uplus:"⊎",sqcup:"⊔",sqcap:"⊓",amalg:"⨿",wr:"≀",diamond:"⋄",triangle:"△",bigtriangleup:"△",bigtriangledown:"▽",
+  triangleleft:"◁",triangleright:"▷",lhd:"⊲",rhd:"⊳",unlhd:"⊴",unrhd:"⊵",square:"□",Box:"□",blacksquare:"■",
+  cdotp:"·",intercal:"⊺",bigcirc:"◯",
+  nleq:"≰",ngeq:"≱",nless:"≮",ngtr:"≯",leqslant:"⩽",geqslant:"⩾",lesssim:"≲",gtrsim:"≳",lessgtr:"≶",
+  preceq:"⪯",succeq:"⪰",asymp:"≍",bowtie:"⋈",Join:"⋈",approxeq:"≊",backsim:"∽",ncong:"≇",nsim:"≁",
+  coloneqq:"≔",eqqcolon:"≕",coloneq:"≔",defeq:"≝",eqdef:"≝",
+  nsubseteq:"⊈",nsupseteq:"⊉",subsetneq:"⊊",supsetneq:"⊋",sqsubset:"⊏",sqsupset:"⊐",sqsubseteq:"⊑",sqsupseteq:"⊒",
+  nmid:"∤",nparallel:"∦",vDash:"⊨",Vdash:"⊩",dashv:"⊣",nexists:"∄",complement:"∁",
+  longrightarrow:"⟶",longleftarrow:"⟵",longleftrightarrow:"⟷",Longrightarrow:"⟹",Longleftarrow:"⟸",
+  Longleftrightarrow:"⟺",longmapsto:"⟼",hookrightarrow:"↪",hookleftarrow:"↩",leadsto:"⇝",
+  rightleftharpoons:"⇌",leftrightharpoons:"⇋",rightharpoonup:"⇀",rightharpoondown:"⇁",leftharpoonup:"↼",
+  rightrightarrows:"⇉",leftleftarrows:"⇇",rightleftarrows:"⇄",leftrightarrows:"⇆",
+  Uparrow:"⇑",Downarrow:"⇓",updownarrow:"↕",Updownarrow:"⇕",nearrow:"↗",searrow:"↘",swarrow:"↙",nwarrow:"↖",
+  nrightarrow:"↛",nleftarrow:"↚",nRightarrow:"⇏",nLeftrightarrow:"⇎",circlearrowleft:"↺",circlearrowright:"↻",
+  varpi:"ϖ",varrho:"ϱ",varsigma:"ς",varkappa:"ϰ",digamma:"ϝ",imath:"ı",jmath:"ȷ",wp:"℘",beth:"ℶ",gimel:"ℷ",
+  ddagger:"‡",S:"§",P:"¶",checkmark:"✓",lnot:"¬",surd:"√",flat:"♭",natural:"♮",sharp:"♯",
+  clubsuit:"♣",diamondsuit:"♢",heartsuit:"♡",spadesuit:"♠",infin:"∞",
+  lvert:"|",rvert:"|",lVert:"‖",rVert:"‖",lbrace:"{",rbrace:"}",lbrack:"[",rbrack:"]",backslash:"\\",
+  ulcorner:"⌜",urcorner:"⌝",llcorner:"⌞",lrcorner:"⌟",
 };
+/* 花体 \mathcal / \mathscr：数学字母数字区的 Script 大写（有几个字母在「字母式符号」区） */
+const TEXCAL_EX={B:"ℬ",E:"ℰ",F:"ℱ",H:"ℋ",I:"ℐ",L:"ℒ",M:"ℳ",R:"ℛ",e:"ℯ",g:"ℊ",o:"ℴ"};
+const texCal=s=>[...s].map(c=>TEXCAL_EX[c]||(/[A-Z]/.test(c)?String.fromCodePoint(0x1D49C+c.charCodeAt(0)-65):
+  /[a-z]/.test(c)?String.fromCodePoint(0x1D4B6+c.charCodeAt(0)-97):c)).join("");
+const TEXFRAK_EX={C:"ℭ",H:"ℌ",I:"ℑ",R:"ℜ",Z:"ℨ"};
+const texFrak=s=>[...s].map(c=>TEXFRAK_EX[c]||(/[A-Z]/.test(c)?String.fromCodePoint(0x1D504+c.charCodeAt(0)-65):
+  /[a-z]/.test(c)?String.fromCodePoint(0x1D51E+c.charCodeAt(0)-97):c)).join("");
+/* \not 后常见组合直接给现成字符 */
+const TEXNOT={"=":"≠","∈":"∉","⊂":"⊄","⊃":"⊅","⊆":"⊈","⊇":"⊉","≤":"≰","≥":"≱","<":"≮",">":"≯","∼":"≁","≅":"≇","≡":"≢","∣":"∤","∥":"∦","∃":"∄","≈":"≉"};
+/* 这些命令只影响 TeX 排版细节，这里直接忽略（不报未知） */
+const TEXIGNORE=new Set(["displaystyle","textstyle","scriptstyle","scriptscriptstyle","limits","nolimits","displaylimits",
+  "nonumber","notag","allowbreak","strut","mathstrut","hline","noindent","centering","relax","nobreak","mathop","mathrel","mathbin",
+  "mathord","mathpunct","mathopen","mathclose","mathinner","left.","right.","smash"]);
+/* 可伸长箭头 \xrightarrow 等：[下方]{上方} */
+const TEXXARROW={xrightarrow:"r",xleftarrow:"l",xRightarrow:"R",xLeftarrow:"L",xleftrightarrow:"lr",
+  xLeftrightarrow:"LR",xmapsto:"m",xlongequal:"=",xhookrightarrow:"hr",xtwoheadrightarrow:"r",xrightharpoonup:"r",xrightleftharpoons:"lr"};
+/* 字号无关的长度 → em（\hspace / \kern / \mkern 用） */
+function texLen(v){
+  const m=/^\s*(-?[\d.]+)\s*(em|ex|pt|px|mu|cm|mm|in)?\s*$/.exec(String(v||""));
+  if(!m)return null;
+  const x=parseFloat(m[1]),u=m[2]||"em";
+  const k={em:1,ex:.45,pt:.1,px:.0667,mu:1/18,cm:2.85,mm:.285,in:7.2}[u];
+  return (x*k).toFixed(3)+"em";
+}
+const TEXCOLOR=c=>/^#?[0-9a-zA-Z]{1,24}$/.test(String(c).trim())?(/^[0-9a-fA-F]{6}$/.test(c.trim())?"#"+c.trim():c.trim()):"";
 const TEXFN=["log","ln","lg","exp","sin","cos","tan","cot","sec","csc","arcsin","arccos","arctan",
   "sinh","cosh","tanh","max","min","sup","inf","lim","arg","det","dim","ker","deg","gcd","Pr",
   "argmax","argmin","softmax","Var","Cov","KL","Tr","diag","sgn","mod"];
-const TEXSP={",":"0.18em",":":"0.24em",";":"0.3em","!":"0","quad":"1em","qquad":"2em"," ":"0.25em"};
-const TEXACC={hat:"̂",bar:"̄",tilde:"̃",vec:"⃗",dot:"̇",ddot:"̈",check:"̌",breve:"̆",acute:"́",grave:"̀"};
+const TEXSP={",":"0.18em",":":"0.24em",";":"0.3em","!":"-0.1em","quad":"1em","qquad":"2em"," ":"0.25em",">":"0.24em",
+  enspace:"0.5em",enskip:"0.5em",thinspace:"0.18em",medspace:"0.24em",thickspace:"0.3em",negthinspace:"-0.1em",
+  negmedspace:"-0.2em",negthickspace:"-0.28em",space:"0.25em",nobreakspace:"0.25em"};
+const TEXACC={hat:"̂",bar:"̄",tilde:"̃",vec:"⃗",dot:"̇",ddot:"̈",dddot:"⃛",check:"̌",breve:"̆",acute:"́",grave:"̀",mathring:"̊"};
 const TEXBB={R:"ℝ",N:"ℕ",Z:"ℤ",Q:"ℚ",C:"ℂ",E:"𝔼",P:"ℙ",H:"ℍ",F:"𝔽",I:"𝕀",1:"𝟙",D:"𝔻",S:"𝕊"};
 /* 矩阵 / 方程组环境的左右定界符 */
 const TEXENV={
@@ -2090,12 +2140,94 @@ function texParse(s){
     if(s[i]!=null){const d=TEXDLM[s[i]]||"";i++;return d;}
     return "";
   }
+  function readOpt(){            // 可选参数 [..]（支持嵌套 {}），返回解析后的节点；没有就返回 null
+    while(s[i]===" ")i++;
+    if(s[i]!=="[")return null;
+    let depth=0,k=i+1;
+    for(;k<s.length;k++){
+      if(s[k]==="{")depth++;
+      else if(s[k]==="}")depth--;
+      else if(s[k]==="]"&&depth<=0)break;
+    }
+    const body=s.slice(i+1,k);i=Math.min(k+1,s.length);
+    return texParse(body);
+  }
+  function readRawArg(){         // 原样读一个参数：{..} 或单个字符
+    while(s[i]===" ")i++;
+    if(s[i]==="{")return readBraced();
+    return i<s.length?s[i++]:"";
+  }
+  function peekScript(c){        // 若下一个记号是 _ 或 ^，读掉并返回它的参数
+    let k=i;while(s[k]===" ")k++;
+    if(s[k]!==c)return null;
+    i=k+1;return parseArg();
+  }
   function mkCmd(name){
-    if(name==="text"||name==="mathrm"||name==="textrm"||name==="operatorname"){while(s[i]===" ")i++;return {t:"text",v:readBraced(),rm:name!=="text"};}
-    if(name==="mathbf"||name==="boldsymbol"||name==="bm"){return {t:"bf",ch:parseArg()};}
+    if(name==="operatorname"&&s[i]==="*")i++;
+    if(name==="text"||name==="mathrm"||name==="textrm"||name==="operatorname"||name==="textnormal"||name==="mbox"||name==="hbox"){while(s[i]===" ")i++;return {t:"text",v:readBraced(),rm:name!=="text"&&name!=="mbox"&&name!=="hbox"&&name!=="textnormal"};}
+    if(name==="textbf"){while(s[i]===" ")i++;return {t:"text",v:readBraced(),bold:1};}
+    if(name==="textit"||name==="emph"||name==="textsl"){while(s[i]===" ")i++;return {t:"text",v:readBraced(),it:1};}
+    if(name==="texttt"||name==="textsf"||name==="textup"){while(s[i]===" ")i++;return {t:"text",v:readBraced(),rm:1};}
+    if(name==="mathbf"){return {t:"bf",up:1,ch:parseArg()};}
+    if(name==="boldsymbol"||name==="bm"||name==="pmb"){return {t:"bf",ch:parseArg()};}
     if(name==="mathbb"){while(s[i]===" ")i++;const v=s[i]==="{"?readBraced():s[i++]||"";return {t:"bb",v};}
-    if(name==="mathcal"||name==="mathit"){return {t:"grp",ch:parseArg()};}
-    if(name==="frac"||name==="dfrac"||name==="tfrac"){const a=parseArg(),b=parseArg();return {t:"frac",a,b};}
+    if(name==="mathcal"||name==="mathscr"){return {t:"text",v:texCal(readRawArg()),rm:1,math:1};}
+    if(name==="mathfrak"){return {t:"text",v:texFrak(readRawArg()),rm:1,math:1};}
+    if(name==="mathit"){return {t:"grp",ch:parseArg()};}
+    if(name==="mathsf"||name==="mathtt"||name==="mathnormal"){return {t:"up",ch:parseArg()};}
+    if(name==="frac"||name==="dfrac"||name==="tfrac"||name==="cfrac"){const a=parseArg(),b=parseArg();return {t:"frac",a,b};}
+    if(name==="binom"||name==="dbinom"||name==="tbinom"){const a=parseArg(),b=parseArg();return {t:"fence",l:"(",r:")",ch:[{t:"frac",a,b,nobar:1}]};}
+    /* 可伸长箭头：\xrightarrow[下]{上} */
+    if(TEXXARROW[name]){const lo=readOpt();const hi=parseArg();return {t:"xarrow",k:TEXXARROW[name],hi,lo};}
+    /* 括号注释：\underbrace{x}_{说明} / \overbrace{x}^{说明} */
+    if(name==="underbrace"||name==="overbrace"){
+      const ch=parseArg(),lab=peekScript(name==="underbrace"?"_":"^");
+      return {t:"brace",dn:name==="underbrace",ch,lab};
+    }
+    if(name==="underbracket"||name==="overbracket"){
+      const ch=parseArg(),lab=peekScript(name==="underbracket"?"_":"^");
+      return {t:"brace",dn:name==="underbracket",sq:1,ch,lab};
+    }
+    /* 上下叠放：\overset{上}{基} \underset{下}{基} \stackrel{上}{基} */
+    if(name==="overset"||name==="stackrel"||name==="overunderset"){const a=parseArg(),b=parseArg();return {t:"stack",hi:a,ch:b};}
+    if(name==="underset"){const a=parseArg(),b=parseArg();return {t:"stack",lo:a,ch:b};}
+    if(name==="overrightarrow"||name==="overleftarrow"||name==="overleftrightarrow"||
+       name==="underrightarrow"||name==="underleftarrow"){
+      const ch=parseArg(),k=/leftright/.test(name)?"lr":/left/.test(name)?"l":"r";
+      const ar=[{t:"xarrow",k,thin:1}];
+      return /^under/.test(name)?{t:"stack",lo:ar,ch,tight:1}:{t:"stack",hi:ar,ch,tight:1};
+    }
+    if(name==="boxed"||name==="fbox"){return {t:"boxed",ch:name==="fbox"?[{t:"text",v:readRawArg()}]:parseArg()};}
+    if(name==="cancel"||name==="bcancel"||name==="xcancel"||name==="sout"){return {t:"cancel",k:name,ch:parseArg()};}
+    if(name==="textcolor"){const c=TEXCOLOR(readRawArg());return {t:"color",c,ch:parseArg()};}
+    if(name==="colorbox"){const c=TEXCOLOR(readRawArg());return {t:"color",bg:1,c,ch:parseArg()};}
+    if(name==="color"){                          // \color{red} 作用到当前组末尾
+      const c=TEXCOLOR(readRawArg());const ch=parseGroup(true);
+      if(lastClosed)i--;                         // 把组的 } 还给外层
+      return {t:"color",c,ch};
+    }
+    if(name==="phantom"||name==="hphantom"){return {t:"phantom",ch:parseArg()};}
+    if(name==="vphantom"){parseArg();return {t:"nop"};}
+    if(name==="hspace"||name==="hskip"||name==="kern"||name==="mkern"||name==="mspace"||name==="mskip"||name==="hspace*"){
+      if(s[i]==="*")i++;
+      let v;while(s[i]===" ")i++;
+      if(s[i]==="{")v=readBraced();
+      else{const m=/^-?[\d.]+\s*[a-z]{2}/.exec(s.slice(i));v=m?m[0]:"";i+=v.length;}
+      const w=texLen(v);return w?{t:"sp",v:w}:{t:"nop"};
+    }
+    if(name==="label"||name==="cline"||name==="vspace"){readRawArg();return {t:"nop"};}
+    if(name==="tag"){if(s[i]==="*")i++;return {t:"text",v:"("+readRawArg()+")",rm:1,tag:1};}
+    if(name==="not"){
+      const a=parseArg();
+      if(a.length===1&&a[0].t==="ch"){const v=a[0].v.trim();return {...a[0],v:TEXNOT[v]||(v+"̸"),sym:1};}
+      return {t:"grp",ch:a};
+    }
+    if(name==="pmod"){const a=parseArg();return {t:"grp",ch:[{t:"sp",v:".5em"},{t:"ch",v:"(",sym:1},{t:"fn",v:"mod"},{t:"sp",v:".25em"},...a,{t:"ch",v:")",sym:1}]};}
+    if(name==="bmod"){return {t:"fn",v:"mod",bin:1};}
+    if(name==="limsup"||name==="liminf"){return {t:"fn",v:name==="limsup"?"lim sup":"lim inf",big:true};}
+    if(name==="substack"){return {t:"mat",env:"subarray",l:"",r:"",rows:splitMatrix(readRawArg()).map(r=>r.map(c=>texParse(c)))};}
+    if(name==="middle"){const d=readDelim();return {t:"ch",v:d,sym:1};}
+    if(TEXIGNORE.has(name))return {t:"nop"};
     if(name==="sqrt"){if(s[i]==="[")while(i<s.length&&s[i]!=="]")i++,i;if(s[i]==="]")i++;return {t:"sqrt",ch:parseArg()};}
     if(name==="overline"||name==="widehat"||name==="widetilde"){return {t:"over",ch:parseArg()};}
     if(name==="underline"){return {t:"under",ch:parseArg()};}
@@ -2162,19 +2294,27 @@ function texParse(s){
     if(TEXSP[name]!=null)return {t:"sp",v:TEXSP[name]};
     if(TEXFN.includes(name))return {t:"fn",v:name,big:["lim","max","min","sup","inf","argmax","argmin"].includes(name)};
     if(TEXSYM[name])return {t:"ch",v:TEXSYM[name],sym:1,big:["sum","prod","int","oint","coprod","bigcup","bigcap","lim"].includes(name)};
-    return {t:"text",v:name,rm:true}; // 未知命令按正体输出
+    if(/^[%&#_$]$/.test(name))return {t:"ch",v:name,sym:1};
+    return {t:"unk",v:name}; // 未知命令：标红显示原文，一眼看出是哪个命令不支持
   }
+  let lastClosed=false;          // 最近一次 parseGroup(true) 是否因遇到 } 而结束
   function parseGroup(stop){
     const out=[];
+    const push=n=>{if(n&&n.t!=="nop")out.push(n);};
     while(i<s.length){
       const c=s[i];
-      if(c==="}"){i++;if(stop)return out;continue;}
-      if(c==="{"){i++;out.push({t:"grp",ch:parseGroup(true)});continue;}
-      if(c==="\\"){const m=/^\\([a-zA-Z]+|.)/.exec(s.slice(i));if(!m){i++;continue;}i+=m[0].length;out.push(mkCmd(m[1]));continue;}
-      if(c==="^"||c==="_"){i++;out.push({t:c==="^"?"sup":"sub",ch:parseArg()});continue;}
-      if(c===" "){i++;continue;}
-      out.push({t:"ch",v:c});i++;
+      if(c==="}"){i++;if(stop){lastClosed=true;return out;}continue;}
+      if(c==="{"){i++;push({t:"grp",ch:parseGroup(true)});continue;}
+      if(c==="\\"){const m=/^\\([a-zA-Z]+|.)/.exec(s.slice(i));if(!m){i++;continue;}i+=m[0].length;push(mkCmd(m[1]));continue;}
+      if(c==="^"||c==="_"){i++;push({t:c==="^"?"sup":"sub",ch:parseArg()});continue;}
+      if(c==="'"){                               // 撇号 → 上标 ′（连写 '' → ″）
+        let n=0;while(s[i]==="'"){n++;i++;}
+        push({t:"ch",v:n===1?"′":n===2?"″":"‴",sym:1,prime:1});continue;
+      }
+      if(c===" "||c==="~"){i++;if(c==="~")push({t:"sp",v:".25em"});continue;}
+      push({t:"ch",v:c});i++;
     }
+    lastClosed=false;
     return out;
   }
   return parseGroup(false);
@@ -2202,8 +2342,49 @@ function matDelim(ch,left,rows){
 }
 /* 内容里有分式 / 根号 / 矩阵 / 大算符 → \left \right 用可伸缩定界符，否则用普通字形 */
 function tallNodes(ns){
-  return (ns||[]).some(x=>x&&(x.t==="frac"||x.t==="mat"||x.t==="sqrt"||x.t==="fence"||x.big||
-    tallNodes(x.ch)||tallNodes(x.a)||tallNodes(x.b)));
+  return (ns||[]).some(x=>x&&(x.t==="frac"||x.t==="mat"||x.t==="sqrt"||x.t==="fence"||x.t==="brace"||
+    x.t==="stack"&&!x.tight||x.big||tallNodes(x.ch)||tallNodes(x.a)||tallNodes(x.b)));
+}
+/* 可伸长箭头的一行：中间的杆随宽度拉长，箭头头部固定大小 */
+function texArrowRow(k,thin){
+  const sw=`stroke="currentColor" stroke-width="1.2" fill="none" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"`;
+  const dbl=k==="R"||k==="L"||k==="LR"||k==="=";
+  const head=right=>`<svg viewBox="0 0 10 12" style="flex:0 0 auto;width:${dbl?".5em":".42em"};height:${dbl?".72em":".6em"};display:block${right?"":";transform:scaleX(-1)"};margin:${right?"0 0 0 -.38em":"0 -.38em 0 0"}"><path d="${dbl?"M1 0.8 Q5 4.5 9.2 6 Q5 7.5 1 11.2":"M1.5 1.6 Q5.5 5 9.2 6 Q5.5 7 1.5 10.4"}" ${sw}/></svg>`;
+  const shaft=`<span style="flex:1 1 auto;min-width:.6em;${dbl?"height:.2em;border-top:1.15px solid currentColor;border-bottom:1.15px solid currentColor":"height:0;border-top:1.15px solid currentColor"}"></span>`;
+  const tick=k==="m"?`<span style="flex:0 0 auto;width:0;height:.5em;border-left:1.15px solid currentColor"></span>`:"";
+  const hook=k==="hr"?`<svg viewBox="0 0 6 12" style="flex:0 0 auto;width:.3em;height:.6em;display:block;margin-right:-1px"><path d="M5.5 6 L3 6 Q0.6 6 0.6 3.6 Q0.6 1.4 3 1.4" ${sw}/></svg>`:"";
+  const L=k==="l"||k==="L"||k==="lr"||k==="LR",R=k==="r"||k==="R"||k==="lr"||k==="LR"||k==="m"||k==="hr";
+  return `<span style="display:flex;align-items:center;${thin?"height:.45em;":"height:.72em;"}padding:0 .08em">`+
+         (L?head(false):"")+tick+hook+shaft+(R?head(true):"")+`</span>`;
+}
+/* 横向花括号 / 方括号（\underbrace \overbrace）：两端弯钩 + 可拉伸的杆 + 中间尖 */
+function texBraceRow(dn,sq){
+  const sw=`stroke="currentColor" stroke-width="1.2" fill="none" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"`;
+  const line=`<span style="flex:1 1 auto;height:0;border-top:1.2px solid currentColor;align-self:center"></span>`;
+  let inner;
+  if(sq) inner=`<span style="flex:1 1 auto;height:.32em;border:1.2px solid currentColor;border-top:0"></span>`;
+  else inner=
+    `<svg viewBox="0 0 6 10" style="flex:0 0 auto;width:.3em;height:100%;display:block"><path d="M0.7 0.6 Q0.7 5 5 5 L6 5" ${sw}/></svg>`+line+
+    `<svg viewBox="0 0 12 10" style="flex:0 0 auto;width:.6em;height:100%;display:block"><path d="M0 5 L1 5 Q5.6 5 6 9.4 Q6.4 5 11 5 L12 5" ${sw}/></svg>`+line+
+    `<svg viewBox="0 0 6 10" style="flex:0 0 auto;width:.3em;height:100%;display:block"><path d="M0 5 L1 5 Q5.3 5 5.3 0.6" ${sw}/></svg>`;
+  return `<span style="display:flex;align-items:stretch;height:.5em;margin:${dn?".08em 0 .02em":".02em 0 .08em"}${dn?"":";transform:scaleY(-1)"}">${inner}</span>`;
+}
+/* 竖向叠放：hi / 基 / lo，都居中；基行的基线就是整体基线 */
+const texSmall=(h,fs)=>`<span style="display:block;text-align:center;font-size:${fs||"70%"};line-height:1.2;white-space:nowrap">${h}</span>`;
+function texStack(hi,base,lo){   // hi / lo 是已经排好的 HTML（或 null）
+  /* inline-table 的基线取「第一行」：上下内容放进 caption，基行就是唯一一行，所以整体基线 = 基的基线 */
+  return `<span style="display:inline-table;vertical-align:baseline;margin:0 .06em">`+
+    (hi!=null?`<span style="display:table-caption;caption-side:top">${hi}</span>`:"")+
+    `<span style="display:table-row"><span style="display:table-cell;text-align:center;white-space:nowrap;line-height:1.25">${base}</span></span>`+
+    (lo!=null?`<span style="display:table-caption;caption-side:bottom">${lo}</span>`:"")+`</span>`;
+}
+/* \xrightarrow：上下文字等高（缺的一边放隐形副本），整体 vertical-align:middle → 箭头落在数学轴上 */
+function texXArrow(k,hiH,loH){
+  const ghost=h=>`<span style="visibility:hidden">${h}</span>`;
+  const top=hiH||(loH?ghost(loH):"&#8203;"),bot=loH||(hiH?ghost(hiH):"&#8203;");
+  const lab=h=>`<span style="display:block;text-align:center;font-size:70%;line-height:1.25;padding:0 .55em;white-space:nowrap">${h}</span>`;
+  return `<span style="display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle;margin:0 .22em;min-width:1.9em">`+
+    lab(top)+texArrowRow(k)+lab(bot)+`</span>`;
 }
 function fenceHTML(n,disp){
   const inner=texHTML(n.ch,disp);
@@ -2261,20 +2442,59 @@ function texHTML(nodes,disp){
         let v=n.v;
         if(v==="-")v="−";
         if(!n.sym&&/[A-Za-z]/.test(v))h+=`<i>${v}</i>`;
-        else if(/[=+×±<>≤≥≈≠→←⇒∈∼≐≜−∪∩]/.test(v))
+        else if(/^[=+×±∓<>≤≥≈≠→←⇒⇐⇔↔∈∉∋∼≃≐≜≡≅∝−∪∩⊙⊕⊗⊖⊘∧∨⊂⊃⊆⊇⊊⊈⟶⟵⟹⟸⟺↦⟼↪⇝⇌≲≳⩽⩾≔≝≪≫≺≻⪯⪰⊢⊨∤]$/.test(v))
           h+=`<span style="padding:${k===0?"0 .14em 0 0":"0 .16em"}">${escXML(v)}</span>`;  // 开头的负号不留左边距
         else h+=escXML(v);
         break;
       }
       case "grp":h+=texHTML(n.ch,disp);break;
-      case "text":h+=`<span style="font-family:${n.rm?"inherit":"var(--f)"};font-style:normal">${escXML(n.v)}</span>`;break;
-      case "bf":h+=`<b>${texHTML(n.ch,disp)}</b>`;break;
+      case "text":h+=`<span style="font-family:${n.rm||n.bold||n.it?(n.math?MFONT:"inherit"):"var(--f)"};font-style:${n.it?"italic":"normal"}${n.bold?";font-weight:700":""}${n.tag?";margin-left:1.6em":""}">${escXML(n.v)}</span>`;break;
+      /* \mathbf 是正体粗体（字母不倾斜）；\boldsymbol 保留斜体 */
+      case "bf":h+=n.up?`<b>${texHTML(n.ch,disp).replace(/<i>/g,'<i style="font-style:normal">')}</b>`:`<b>${texHTML(n.ch,disp)}</b>`;break;
+      case "up":h+=texHTML(n.ch,disp).replace(/<i>/g,'<i style="font-style:normal">');break;
       case "bb":h+=escXML(TEXBB[n.v]||n.v);break;
-      case "fn":h+=`<span style="font-style:normal;padding:0 .12em 0 .06em">${n.v}</span>`;break;
-      case "sp":h+=`<span style="display:inline-block;width:${n.v}"></span>`;break;
-      case "sup":h+=`<sup style="font-size:71%;line-height:1">${texHTML(n.ch)}</sup>`;break;
-      case "sub":h+=`<sub style="font-size:71%;line-height:1">${texHTML(n.ch)}</sub>`;break;
-      case "frac":h+=`<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .18em;line-height:1.25"><span style="font-size:88%;padding:0 .3em">${texHTML(n.a,disp)}</span><span style="font-size:88%;padding:0 .3em;border-top:1.1px solid currentColor">${texHTML(n.b,disp)}</span></span>`;break;
+      case "fn":h+=`<span style="font-style:normal;padding:${n.bin?"0 .3em":"0 .12em 0 .06em"}">${n.v}</span>`;break;
+      case "sp":h+=n.v.startsWith("-")?`<span style="display:inline-block;margin-left:${n.v}"></span>`:`<span style="display:inline-block;width:${n.v}"></span>`;break;
+      case "sup":case "sub":{
+        /* 同一个底同时有上下标（x_i^2 / x^2_i）→ 上下叠放，不再一前一后 */
+        const nx=nodes[k+1];
+        if(nx&&(nx.t==="sup"||nx.t==="sub")&&nx.t!==n.t){
+          const sp=n.t==="sup"?n:nx,sb=n.t==="sub"?n:nx;k++;
+          h+=`<span style="display:inline-block;vertical-align:-.36em;font-size:71%;line-height:1.08;text-align:left;margin-right:.04em">`+
+             `<span style="display:block;white-space:nowrap">${texHTML(sp.ch)}</span>`+
+             `<span style="display:block;white-space:nowrap">${texHTML(sb.ch)}</span></span>`;
+          break;
+        }
+        h+=n.t==="sup"?`<sup style="font-size:71%;line-height:1;margin-right:.05em">${texHTML(n.ch)}</sup>`:`<sub style="font-size:71%;line-height:1;margin-right:.05em">${texHTML(n.ch)}</sub>`;
+        break;
+      }
+      case "frac":h+=`<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 .18em;line-height:1.25"><span style="font-size:88%;padding:0 .3em">${texHTML(n.a,disp)}</span><span style="font-size:88%;padding:0 .3em;${n.nobar?"":"border-top:1.1px solid currentColor"}">${texHTML(n.b,disp)}</span></span>`;break;
+      case "xarrow":
+        if(n.thin){h+=texArrowRow(n.k,1);break;}
+        h+=texXArrow(n.k,n.hi&&n.hi.length?texHTML(n.hi):"",n.lo&&n.lo.length?texHTML(n.lo):"");break;
+      case "brace":{
+        const br=texBraceRow(n.dn,n.sq),lab=n.lab?texSmall(texHTML(n.lab)):"";
+        h+=n.dn?texStack(null,texHTML(n.ch,disp),br+lab):texStack(lab+br,texHTML(n.ch,disp),null);
+        break;
+      }
+      case "stack":{
+        const one=x=>x?(n.tight?texHTML(x):texSmall(texHTML(x))):null;
+        h+=texStack(one(n.hi),texHTML(n.ch,disp),one(n.lo));
+        break;
+      }
+      case "boxed":h+=`<span style="display:inline-block;border:1.1px solid currentColor;padding:.12em .32em;margin:0 .15em;line-height:1.3">${texHTML(n.ch,disp)}</span>`;break;
+      case "cancel":{
+        const ln=(dir)=>`linear-gradient(${dir},transparent calc(50% - .6px),currentColor calc(50% - .6px),currentColor calc(50% + .6px),transparent calc(50% + .6px))`;
+        const bg=n.k==="sout"?"":n.k==="bcancel"?ln("to bottom right"):n.k==="xcancel"?ln("to top right")+","+ln("to bottom right"):ln("to top right");
+        h+=n.k==="sout"?`<s>${texHTML(n.ch,disp)}</s>`:`<span style="display:inline-block;background:${bg};padding:0 .06em;line-height:1.1">${texHTML(n.ch,disp)}</span>`;
+        break;
+      }
+      case "color":
+        h+=n.bg?`<span style="background:${n.c||"transparent"};padding:0 .2em;border-radius:2px">${texHTML(n.ch,disp)}</span>`
+               :`<span style="color:${n.c||"inherit"}">${texHTML(n.ch,disp)}</span>`;
+        break;
+      case "phantom":h+=`<span style="visibility:hidden">${texHTML(n.ch,disp)}</span>`;break;
+      case "unk":h+=`<span title="无界暂不支持 \\${escXML(n.v)}" style="color:#dc2626;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82em;font-style:normal;background:rgba(220,38,38,.08);border-radius:3px;padding:0 .15em">\\${escXML(n.v)}</span>`;break;
       case "sqrt":h+=`<span style="display:inline-flex;align-items:stretch;white-space:nowrap"><span style="display:flex;align-items:center;font-size:1.05em">√</span><span style="border-top:1.1px solid currentColor;padding:.08em .18em 0 .12em">${texHTML(n.ch,disp)}</span></span>`;break;
       case "over":h+=`<span style="border-top:1.1px solid currentColor;padding:0 .1em">${texHTML(n.ch,disp)}</span>`;break;
       case "under":h+=`<span style="border-bottom:1.1px solid currentColor;padding:0 .1em">${texHTML(n.ch,disp)}</span>`;break;
@@ -2317,6 +2537,20 @@ function texText(nodes){
         break;
       }
       case "fence":o+=(n.l||"")+texText(n.ch)+(n.r||"");break;
+      case "up":case "color":case "phantom":case "boxed":case "cancel":o+=texText(n.ch);break;
+      case "unk":o+="\\"+n.v;break;
+      case "xarrow":{
+        const ar={r:"→",l:"←",R:"⇒",L:"⇐",lr:"↔",LR:"⇔",m:"↦","=":"=",hr:"↪"}[n.k]||"→";
+        const hi=n.hi?texText(n.hi):"",lo=n.lo?texText(n.lo):"";
+        o+=(o.endsWith(" ")?"":" ")+ar+(hi||lo?"["+hi+(lo?" / "+lo:"")+"]":"")+" ";break;
+      }
+      case "brace":o+=texText(n.ch)+(n.lab?"〔"+texText(n.lab)+"〕":"");break;
+      case "stack":{
+        const b=texText(n.ch),hi=n.hi&&!n.tight?texText(n.hi):"",lo=n.lo&&!n.tight?texText(n.lo):"";
+        if(n.tight)o+=b;
+        else o+=(hi?b+"^("+hi+")":b)+(lo?"_("+lo+")":"");
+        break;
+      }
     }
   }
   return o.replace(/ {2,}/g," ").replace(/ +([,.;:)\]}])/g,"$1").replace(/([([{]) +/g,"$1").trim();
@@ -7278,7 +7512,7 @@ const HELP=[
   ["矩阵 / 行列式","<kbd>\\begin{bmatrix}</kbd> … <kbd>\\end{bmatrix}</kbd>：<kbd>&</kbd> 分列、<kbd>\\\\</kbd> 换行"],
   ["方括号以外","pmatrix ( ) · vmatrix | | · Vmatrix ‖ ‖ · Bmatrix { } · matrix 无框"],
   ["方程组 / 分段函数","<kbd>\\begin{cases}</kbd> … <kbd>\\end{cases}</kbd>，左花括号自动撑高"],
-  ["<kbd>\\left( \\right)</kbd>","括号随内容（分式 / 矩阵 / ∑）自动变高"],["公式导出","PNG/大纲转为可读 Unicode 数学式"],
+  ["<kbd>\\left( \\right)</kbd>","括号随内容（分式 / 矩阵 / ∑）自动变高"],["<kbd>\\xrightarrow{..}</kbd> <kbd>\\underbrace{..}_{..}</kbd>","可伸长箭头、括号注释、<kbd>\\overset</kbd>/<kbd>\\underset</kbd>；不支持的命令会标红显示"],["公式导出","PNG/大纲转为可读 Unicode 数学式"],
   ["左下角上排","文件夹：＋ 新建 · 点击切换 · 双击重命名 · ✕ 删除（画布会移到相邻文件夹）"],
   ["左下角下排","当前文件夹里的画布：＋ 新建 · 双击重命名 · ✕ 删除"],
   ["把画布收进文件夹","拖下排标签到上排文件夹上；或右键标签选「移到…」/「新建文件夹并移入」"],
